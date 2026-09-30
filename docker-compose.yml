@@ -13,6 +13,8 @@ x-hadoop: &hadoop
   build: docker/hadoop
   profiles: [hadoop]
   restart: unless-stopped
+  volumes:
+    - ./spark:/opt/bank/spark:ro
 
 services:
   source-db:
@@ -98,7 +100,7 @@ services:
       ENSURE_NAMENODE_DIR: /hadoop/dfs/name/current
       HADOOP_HEAPSIZE_MAX: 512m
     ports: ["9870:9870"]
-    volumes: [hdfs-name:/hadoop/dfs/name]
+    volumes: [hdfs-name:/hadoop/dfs/name, ./spark:/opt/bank/spark:ro]
     healthcheck:
       test: ["CMD-SHELL", "hdfs dfsadmin -safemode get | grep -q OFF"]
       interval: 10s
@@ -110,7 +112,7 @@ services:
     command: ["hdfs", "datanode"]
     environment:
       HADOOP_HEAPSIZE_MAX: 512m
-    volumes: [hdfs-data:/hadoop/dfs/data]
+    volumes: [hdfs-data:/hadoop/dfs/data, ./spark:/opt/bank/spark:ro]
     depends_on: [namenode]
 
   resourcemanager:
