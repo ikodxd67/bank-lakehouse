@@ -12,6 +12,7 @@ import time
 
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
+
 from tables import TABLES, Table, ods_ddl
 
 JDBC_URL = "jdbc:postgresql://source-db:5432/core"
@@ -26,12 +27,18 @@ def read_source(spark: SparkSession, table: Table, partitions: int) -> DataFrame
     # Границы берём из самой таблицы: Spark делит [min, max] на равные диапазоны
     # и читает их параллельно отдельными запросами — по соединению на партицию.
     bounds = spark.read.jdbc(
-        JDBC_URL, f"(select min({table.jdbc_split}) lo, max({table.jdbc_split}) hi from core.{table.name}) b",
+        JDBC_URL,
+        f"(select min({table.jdbc_split}) lo, max({table.jdbc_split}) hi from core.{table.name}) b",
         properties=JDBC_PROPS,
     ).first()
     return spark.read.jdbc(
-        JDBC_URL, query, column=table.jdbc_split, lowerBound=bounds.lo, upperBound=bounds.hi + 1,
-        numPartitions=partitions, properties=JDBC_PROPS,
+        JDBC_URL,
+        query,
+        column=table.jdbc_split,
+        lowerBound=bounds.lo,
+        upperBound=bounds.hi + 1,
+        numPartitions=partitions,
+        properties=JDBC_PROPS,
     )
 
 

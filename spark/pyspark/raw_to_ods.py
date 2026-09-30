@@ -16,6 +16,7 @@ import time
 
 from pyspark.sql import DataFrame, SparkSession, Window
 from pyspark.sql import functions as F
+
 from tables import META_COLUMNS, TABLES, Table, envelope_ddl
 
 STATE_DDL = """
@@ -43,7 +44,11 @@ def parse_events(raw: DataFrame, table: Table) -> DataFrame:
     """Строки raw -> по одной строке на ключ с последним состоянием и служебными колонками."""
     ev = raw.select(
         F.from_json("value", envelope_ddl(table)).alias("e"),
-        "op", "lsn", "batch_id", "kafka_partition", "kafka_offset",
+        "op",
+        "lsn",
+        "batch_id",
+        "kafka_partition",
+        "kafka_offset",
     )
     is_delete = F.col("op") == "d"
     # у удаления after пустой, данные строки лежат в before (REPLICA IDENTITY FULL)
@@ -113,9 +118,7 @@ def apply_table(spark: SparkSession, table: Table, prune: bool) -> dict:
     merge_s = time.monotonic() - t0
     # Водяной знак пишется после MERGE отдельным коммитом. Если упасть между ними,
     # следующий запуск применит тот же пакет ещё раз — и ничего не изменит.
-    spark.sql(
-        f"INSERT INTO ods._load_state VALUES ('{table.name}', {stats.max_batch}, current_timestamp())"
-    )
+    spark.sql(f"INSERT INTO ods._load_state VALUES ('{table.name}', {stats.max_batch}, current_timestamp())")
     events.unpersist()
     return {"table": table.name, "keys": stats.n, "merge_s": round(merge_s, 1)}
 

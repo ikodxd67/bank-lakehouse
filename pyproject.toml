@@ -40,3 +40,6 @@ testpaths = ["tests"]
 markers = [
     "integration: нужен поднятый стенд docker compose",
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["bank_lakehouse", "tables"]
