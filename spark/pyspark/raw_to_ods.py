@@ -71,7 +71,7 @@ def parse_events(raw: DataFrame, table: Table) -> DataFrame:
     return rows.withColumn("_rn", F.row_number().over(w)).where("_rn = 1").drop("_rn", "kafka_offset")
 
 
-def merge_sql(table: Table, source_view: str, prune_from: str | None) -> str:
+def merge_sql(table: Table, source_view: str, prune_from: str | None, target: str | None = None) -> str:
     on = " AND ".join(f"t.{k} = s.{k}" for k in table.pk)
     if prune_from and table.prune_column:
         # prune_column не меняется у строки (время операции), поэтому строки пакета
@@ -81,7 +81,7 @@ def merge_sql(table: Table, source_view: str, prune_from: str | None) -> str:
     cols = table.column_names() + [c for c, _ in META_COLUMNS]
     sets = ", ".join(f"t.{c} = s.{c}" for c in cols)
     return f"""
-MERGE INTO {table.ods} t
+MERGE INTO {target or table.ods} t
 USING {source_view} s
 ON {on}
 WHEN MATCHED AND s._version > t._version THEN UPDATE SET {sets}

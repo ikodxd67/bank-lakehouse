@@ -8,6 +8,38 @@ name: bank-lakehouse
 #   gp             Greenplum (Greengage)
 #   airflow        оркестрация
 
+x-airflow: &airflow
+  image: bank-lakehouse/airflow:local
+  build: {context: docker, dockerfile: airflow/Dockerfile}
+  profiles: [airflow]
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+    AIRFLOW__CORE__PARALLELISM: "4"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+    AIRFLOW__API_AUTH__JWT_SECRET: local-only-not-a-secret
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "true"
+    # spark-submit уходит в YARN, драйвер работает в кластере (deploy-mode cluster)
+    AIRFLOW_CONN_SPARK_YARN: '{"conn_type": "spark", "host": "yarn", "extra": {"queue": "etl", "deploy-mode": "cluster", "yarn_resourcemanager_webapp_address": "http://resourcemanager:8088"}}'
+    PYTHONPATH: /opt/bank/src
+    BANK_PROJECT_DIR: /opt/bank
+    BANK_SOURCE_DSN: postgresql://bank:bank@source-db:5432/core
+    BANK_GP_DSN: postgresql://gpadmin:gpadmin@greenplum:5432/dwh
+    BANK_WEBHDFS_URL: http://namenode:9870
+    GP_HOST: greenplum
+    GP_PORT: "5432"
+  volumes:
+    - ./dags:/opt/airflow/dags:ro
+    - ./src:/opt/bank/src:ro
+    - ./spark:/opt/bank/spark:ro
+    - ./dbt:/opt/bank/dbt:ro
+    - ./sql:/opt/bank/sql:ro
+    - airflow-logs:/opt/airflow/logs
+  depends_on:
+    airflow-db: {condition: service_healthy}
+
 x-hadoop: &hadoop
   image: bank-lakehouse/hadoop:local
   build: docker/hadoop
@@ -235,7 +267,57 @@ services:
       retries: 60
     restart: unless-stopped
 
+  airflow-db:
+    image: postgres:16
+    profiles: [airflow]
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes: [airflow-db-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 20
+    restart: unless-stopped
+
+  airflow-init:
+    <<: *airflow
+    command: db migrate
+    restart: "no"
+
+  airflow-apiserver:
+    <<: *airflow
+    command: api-server
+    ports: ["8080:8080"]
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    depends_on:
+      airflow-init: {condition: service_completed_successfully}
+    restart: unless-stopped
+
+  airflow-scheduler:
+    <<: *airflow
+    command: scheduler
+    depends_on:
+      airflow-init: {condition: service_completed_successfully}
+    restart: unless-stopped
+
+  # в Airflow 3 разбор DAG-файлов — отдельный процесс
+  airflow-dag-processor:
+    <<: *airflow
+    command: dag-processor
+    depends_on:
+      airflow-init: {condition: service_completed_successfully}
+    restart: unless-stopped
+
 volumes:
+  airflow-db-data:
+  airflow-logs:
   gp-data:
   source-data:
   kafka-data:
