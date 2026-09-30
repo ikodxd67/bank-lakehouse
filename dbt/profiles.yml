@@ -1,0 +1,12 @@
+bank:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('GP_HOST', 'localhost') }}"
+      port: "{{ env_var('GP_PORT', '5434') | int }}"
+      user: gpadmin
+      password: "{{ env_var('GP_PASSWORD', 'gpadmin') }}"
+      dbname: dwh
+      schema: public
+      threads: 2

@@ -1,0 +1,30 @@
+name: bank
+version: "0.1.0"
+config-version: 2
+profile: bank
+
+model-paths: ["models"]
+snapshot-paths: ["snapshots"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+models:
+  bank:
+    staging:
+      +schema: stg
+      +materialized: view
+    dds:
+      +schema: dds
+      +materialized: table
+    marts:
+      +schema: marts
+      +materialized: table
+      # витрины читаются целиком и перестраиваются: колоночное хранение со сжатием
+      +storage: {appendoptimized: true, orientation: column, compresstype: zstd, compresslevel: 1}
+
+snapshots:
+  bank:
+    +target_schema: dds
+
+flags:
+  send_anonymous_usage_stats: false

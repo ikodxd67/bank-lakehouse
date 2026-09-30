@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: fact_card_txn
+    columns:
+      - name: txn_id
+        data_tests: [unique, not_null]
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['authorized', 'posted', 'reversed']}
+      - name: amount_kzt
+        data_tests: [not_null]
+      - name: card_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_card'), field: card_id}
+      - name: merchant_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_merchant'), field: merchant_id}
+  - name: dim_client
+    data_tests:
+      - scd2_no_overlap:
+          arguments: {key: client_id}
+    columns:
+      - name: client_id
+        data_tests: [not_null]
+  - name: dim_card
+    data_tests:
+      - scd2_no_overlap:
+          arguments: {key: card_id}
+  - name: dim_merchant
+    columns:
+      - name: merchant_id
+        data_tests: [unique, not_null]
+  - name: dim_date
+    columns:
+      - name: date_key
+        data_tests: [unique]

@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: stg
+    description: Загружает bank gp-load. ext_* — внешние таблицы PXF поверх Parquet в HDFS.
+    schema: stg
+    tables:
+      - name: ext_clients
+        description: клиенты без персональных данных (год рождения вместо даты, без ФИО и контактов)
+      - name: ext_accounts
+      - name: ext_cards
+      - name: ext_merchants
+      - name: fact_card_txn_delta
+        description: все загруженные выгрузки фактов; строка операции повторяется в каждой выгрузке, где она менялась
