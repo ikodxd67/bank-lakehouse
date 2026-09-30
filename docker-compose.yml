@@ -66,6 +66,9 @@ services:
       # из Kafka данные забирает Spark каждый час; три дня — запас на простой
       KAFKA_LOG_RETENTION_HOURS: 72
       KAFKA_HEAP_OPTS: -Xmx512m -Xms256m
+      # по умолчанию образ пишет журналы в /tmp внутри контейнера: том был пустым,
+      # и пересоздание контейнера стёрло бы топики вместе со смещениями Connect
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
     ports: ["9092:9092"]
     volumes: [kafka-data:/var/lib/kafka/data]
     healthcheck:
@@ -217,6 +220,9 @@ services:
       GREENPLUM_PASSWORD: gpadmin
       GREENPLUM_DATABASE_NAME: dwh
       GREENPLUM_PXF_ENABLE: "true"
+      # при перезапуске контейнера `pxf cluster start` подключается к базе по TCP и
+      # без пароля падает, а вместе с ним и весь контейнер (цикл перезапусков)
+      PGPASSWORD: gpadmin
       TZ: Asia/Almaty
     ports: ["5434:5432"]
     volumes:

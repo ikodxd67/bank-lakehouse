@@ -122,11 +122,19 @@ def list_exports(webhdfs_url: str) -> list[int]:
 def ensure_objects(conn: psycopg.Connection) -> None:
     with conn.transaction():
         conn.execute(DELTA_DDL.format(cols=_cols(FACT_COLUMNS)))
-        # внешние таблицы справочников смотрят на постоянный каталог, данные в нём
-        # полностью заменяются каждой выгрузкой справочников
+        # Внешние таблицы справочников смотрят на постоянный каталог, данные в нём
+        # полностью заменяются каждой выгрузкой. Создаются один раз: на них ссылаются
+        # представления dbt, и DROP без CASCADE не пройдёт.
+        existing = {
+            r[0]
+            for r in conn.execute(
+                "select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace"
+                " where n.nspname = 'stg' and c.relname like 'ext\\_%'"
+            )
+        }
         for name, cols in DIM_COLUMNS.items():
-            conn.execute(f"drop external table if exists stg.ext_{name}")
-            conn.execute(external_ddl(f"stg.ext_{name}", cols, f"{DIMS_DIR}/{name}"))
+            if f"ext_{name}" not in existing:
+                conn.execute(external_ddl(f"stg.ext_{name}", cols, f"{DIMS_DIR}/{name}"))
 
 
 def load_export(conn: psycopg.Connection, export_id: int) -> int:

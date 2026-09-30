@@ -32,6 +32,9 @@ def main(argv: list[str] | None = None) -> None:
 
     sub.add_parser("gp-load", help="загрузить новые выгрузки из HDFS в Greenplum")
 
+    r = sub.add_parser("reconcile", help="сверить источник с хранилищем по дням")
+    r.add_argument("--since", type=date.fromisoformat, default=date(2025, 1, 1))
+
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     settings = Settings.from_env()
@@ -67,6 +70,18 @@ def main(argv: list[str] | None = None) -> None:
         from bank_lakehouse import gp_load
 
         print(gp_load.run(settings.gp_dsn, settings.webhdfs_url))
+    elif args.cmd == "reconcile":
+        import sys
+
+        from bank_lakehouse import reconcile
+
+        diffs = reconcile.run(settings.source_dsn, settings.gp_dsn, args.since)
+        broken = [d for d in diffs if not d.settling]
+        for d in diffs:
+            mark = "в пути" if d.settling else "РАСХОЖДЕНИЕ"
+            print(f"{d.day} {mark}: источник {d.source[0]:,} / {d.source[1]:,}, хранилище {d.dwh[0]:,} / {d.dwh[1]:,}")
+        print(f"дней с расхождением: {len(broken)}, в пути: {len(diffs) - len(broken)}")
+        sys.exit(1 if broken else 0)
 
 
 if __name__ == "__main__":

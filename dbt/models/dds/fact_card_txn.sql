@@ -23,7 +23,9 @@
     storage={'appendoptimized': 'true', 'orientation': 'column', 'compresstype': 'zstd', 'compresslevel': 1},
     partition_by_range={'column': 'txn_date', 'start': "date '2025-01-01'", 'end': "date '2027-01-01'", 'every': "interval '1 month'"},
     incremental_predicates=(["DBT_INTERNAL_DEST.txn_date >= date '" ~ min_date ~ "'"] if min_date else []),
+    post_hook="analyze {{ this }}",
 ) }}
+{# без статистики планировщик GPORCA не знает размеров партиций и ошибается с перемещениями данных #}
 
 with delta as (
     select *
