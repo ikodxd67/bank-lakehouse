@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.env
+logs/
+target/
+project/target/
+.bsp/
+.metals/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+.idea/
+.vscode/

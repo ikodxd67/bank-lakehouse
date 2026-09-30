@@ -1,0 +1,48 @@
+name: bank-lakehouse
+
+# Весь стек в 8 ГБ Docker не помещается, поэтому сервисы разбиты на профили:
+#   (без профиля)  источник
+#   cdc            Kafka и Kafka Connect с Debezium
+#   hadoop         HDFS, YARN, Hive Metastore, Spark History Server
+#   hive           HiveServer2 (SQL поверх raw и ods)
+#   gp             Greenplum (Greengage)
+#   airflow        оркестрация
+
+x-hadoop: &hadoop
+  image: bank-lakehouse/hadoop:local
+  build: docker/hadoop
+  profiles: [hadoop]
+  restart: unless-stopped
+
+services:
+  source-db:
+    image: postgres:16
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_replication_slots=4
+      - -c
+      - max_wal_senders=4
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - timezone=Asia/Almaty
+    environment:
+      POSTGRES_USER: bank
+      POSTGRES_PASSWORD: bank
+      POSTGRES_DB: core
+    ports: ["5433:5432"]
+    volumes: [source-data:/var/lib/postgresql/data]
+    shm_size: 256mb
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "bank", "-d", "core"]
+      interval: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  source-data:
