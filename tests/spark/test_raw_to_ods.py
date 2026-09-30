@@ -77,11 +77,14 @@ def reset_target(spark) -> None:
     spark.sql(f"""
         INSERT INTO {TARGET} VALUES
         (1, 10, 1, TIMESTAMP '2026-09-30 15:00:00', 100.50, 'KZT', 'authorized', '000001',
-         TIMESTAMP '2026-09-30 15:00:00', TIMESTAMP '2026-09-30 15:00:00', 1, 1, false, 'r', NULL, 0, current_timestamp()),
+         TIMESTAMP '2026-09-30 15:00:00', TIMESTAMP '2026-09-30 15:00:00', 1,
+         1, false, 'r', NULL, 0, current_timestamp()),
         (2, 10, 1, TIMESTAMP '2026-09-30 15:00:00', 100.50, 'KZT', 'posted', '000001',
-         TIMESTAMP '2026-09-30 15:00:00', TIMESTAMP '2026-09-30 15:00:00', 2, 2, false, 'r', NULL, 0, current_timestamp()),
+         TIMESTAMP '2026-09-30 15:00:00', TIMESTAMP '2026-09-30 15:00:00', 2,
+         2, false, 'r', NULL, 0, current_timestamp()),
         (3, 10, 1, TIMESTAMP '2026-09-30 15:00:00', 100.50, 'KZT', 'authorized', '000001',
-         TIMESTAMP '2026-09-30 15:00:00', TIMESTAMP '2026-09-30 15:00:00', 1, 1, false, 'r', NULL, 0, current_timestamp())
+         TIMESTAMP '2026-09-30 15:00:00', TIMESTAMP '2026-09-30 15:00:00', 1,
+         1, false, 'r', NULL, 0, current_timestamp())
     """)
 
 

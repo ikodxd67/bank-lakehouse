@@ -16,3 +16,4 @@ dbt/dbt_packages/
 .idea/
 .vscode/
 dbt/.user.yml
+dbt/target-ci/

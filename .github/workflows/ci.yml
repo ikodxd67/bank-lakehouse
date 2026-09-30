@@ -1,0 +1,105 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Lint
+        run: |
+          ruff check src spark tests dags
+          ruff format --check src spark tests dags
+      - name: Unit tests
+        run: pytest -m "not integration" -q --ignore=tests/spark
+      - name: Compose file is valid
+        run: docker compose --profile cdc --profile hadoop --profile hive --profile gp --profile airflow config -q
+
+  scala:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: spark/scala
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - name: Test and package
+        run: sbt -batch test package
+
+  images:
+    # Spark-тесты и тесты DAG-ов идут в тех же образах, что и на стенде:
+    # версии Spark, Iceberg и Airflow не расходятся с тем, что реально работает
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build cluster image
+        run: docker build -t bank-lakehouse/hadoop:local docker/hadoop
+      - name: Spark tests (MERGE on Iceberg)
+        run: >
+          docker run --rm -u root -e TZ=Asia/Almaty
+          -e SPARK_CONF_DIR=/tmp/noconf -e HADOOP_CONF_DIR=/tmp/noconf
+          -v "$PWD":/w -w /w --entrypoint bash bank-lakehouse/hadoop:local -c
+          "mkdir -p /tmp/noconf && apt-get update -qq && apt-get install -y -qq python3-pytest > /dev/null &&
+          PYTHONPATH=/opt/spark/python:\$(ls /opt/spark/python/lib/py4j-*.zip) python3 -m pytest tests/spark -q -p no:cacheprovider"
+      - name: Build Airflow image
+        run: docker build -t bank-lakehouse/airflow:local -f docker/airflow/Dockerfile docker
+      - name: DAG tests
+        run: >
+          docker run --rm -v "$PWD":/opt/bank -w /opt/bank -e PYTHONPATH=/opt/bank/src
+          --entrypoint bash bank-lakehouse/airflow:local -c
+          "pip install -q pytest && python -m pytest -q -p no:cacheprovider tests/test_dags.py"
+
+  dbt-greenplum:
+    # dbt на настоящем Greengage: макросы распределения, партиций и хранения,
+    # SCD2 по времени изменения и инкремент delete+insert на двух выгрузках
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GP_HOST: localhost
+      GP_PORT: "5432"
+      GP_DB: ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Start Greengage
+        run: |
+          docker run -d --name gp --hostname gp -p 5432:5432 \
+            -e GREENPLUM_PASSWORD=gpadmin -e GREENPLUM_DATABASE_NAME=ci woblerr/greengage:7.5.0
+          for i in $(seq 1 60); do
+            docker exec -u gpadmin gp bash -lc "psql -d ci -tAc 'select 1'" > /dev/null 2>&1 && break
+            sleep 5
+          done
+      - name: Install dbt
+        run: pip install -e ".[dbt]"
+      - name: First export
+        run: docker exec -i -u gpadmin gp bash -lc "psql -d ci -v ON_ERROR_STOP=1 -q" < tests/dbt/seed_1.sql
+      - name: dbt build
+        run: dbt build --project-dir dbt --profiles-dir dbt
+      - name: Second export
+        run: docker exec -i -u gpadmin gp bash -lc "psql -d ci -v ON_ERROR_STOP=1 -q" < tests/dbt/seed_2.sql
+      - name: dbt build (incremental)
+        run: dbt build --project-dir dbt --profiles-dir dbt
+      - name: Check result
+        run: docker exec -i -u gpadmin gp bash -lc "psql -d ci -v ON_ERROR_STOP=1 -tA" < tests/dbt/check.sql

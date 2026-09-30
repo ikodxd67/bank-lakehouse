@@ -7,6 +7,6 @@ bank:
       port: "{{ env_var('GP_PORT', '5434') | int }}"
       user: gpadmin
       password: "{{ env_var('GP_PASSWORD', 'gpadmin') }}"
-      dbname: dwh
+      dbname: "{{ env_var('GP_DB', 'dwh') }}"
       schema: public
       threads: 2

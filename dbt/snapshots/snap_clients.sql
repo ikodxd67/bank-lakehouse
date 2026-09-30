@@ -7,6 +7,7 @@
     unique_key='client_id',
     strategy='check',
     check_cols=['city', 'segment'],
+    updated_at='updated_at',
     hard_deletes='invalidate',
     distributed_by=['client_id'],
 ) }}

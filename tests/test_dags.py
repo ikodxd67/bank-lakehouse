@@ -1,5 +1,7 @@
 """Запускается в образе Airflow (см. CI): там есть Airflow и провайдер Spark."""
 
+from itertools import pairwise
+
 import pytest
 
 pytest.importorskip("airflow")
@@ -19,7 +21,7 @@ def test_no_import_errors(bag):
 def test_hourly_chain(bag):
     dag = bag.dags["bank_hourly"]
     order = ["cdc_to_raw", "raw_to_ods", "fact_export", "gp_load", "dbt_build", "reconcile"]
-    for up, down in zip(order, order[1:], strict=False):
+    for up, down in pairwise(order):
         assert down in dag.get_task(up).downstream_task_ids, f"{up} -> {down}"
     assert "gp_load" in dag.get_task("export_dims").downstream_task_ids
 
