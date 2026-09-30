@@ -100,9 +100,14 @@ create index if not exists card_transactions_status_ts
 
 -- публикация для Debezium создаётся заранее и явно: у пользователя cdc нет прав
 -- создавать публикации на все таблицы
-drop publication if exists cdc_core;
-create publication cdc_core for table
-    core.clients, core.accounts, core.cards, core.merchants, core.card_transactions, core.fx_rates;
+-- без drop: повторная миграция при работающем коннекторе не должна ломать репликацию
+do $$
+begin
+    if not exists (select from pg_publication where pubname = 'cdc_core') then
+        create publication cdc_core for table
+            core.clients, core.accounts, core.cards, core.merchants, core.card_transactions, core.fx_rates;
+    end if;
+end $$;
 
 do $$
 begin

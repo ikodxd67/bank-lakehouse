@@ -27,6 +27,9 @@ def main(argv: list[str] | None = None) -> None:
     s.add_argument("--hold-ttl", default="7 days", help="через сколько удаляется неподтверждённая авторизация")
     s.add_argument("--ticks", type=int, default=None, help="сколько тактов сделать (по умолчанию бесконечно)")
 
+    sub.add_parser("cdc-register", help="зарегистрировать коннектор Debezium")
+    sub.add_parser("cdc-status", help="состояние коннектора Debezium")
+
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     settings = Settings.from_env()
@@ -50,6 +53,13 @@ def main(argv: list[str] | None = None) -> None:
             SimParams(tick_seconds=args.tick, txn_per_second=args.tps, hold_ttl=args.hold_ttl),
             ticks=args.ticks,
         )
+    elif args.cmd in ("cdc-register", "cdc-status"):
+        import json
+
+        from bank_lakehouse import cdc
+
+        fn = cdc.register if args.cmd == "cdc-register" else cdc.status
+        print(json.dumps(fn(settings.connect_url), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

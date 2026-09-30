@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<configuration>
+  <property><name>fs.defaultFS</name><value>hdfs://namenode:8020</value></property>
+  <!-- HiveServer2 и Spark ходят от имени hive и spark; без прокси-пользователей Hadoop их не пустит -->
+  <property><name>hadoop.proxyuser.hive.hosts</name><value>*</value></property>
+  <property><name>hadoop.proxyuser.hive.groups</name><value>*</value></property>
+  <property><name>hadoop.proxyuser.hadoop.hosts</name><value>*</value></property>
+  <property><name>hadoop.proxyuser.hadoop.groups</name><value>*</value></property>
+  <property><name>hadoop.http.staticuser.user</name><value>hadoop</value></property>
+</configuration>

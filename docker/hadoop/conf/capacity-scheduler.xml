@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<configuration>
+  <!-- Две очереди, как в кластерах банков: регламентные загрузки не должны ждать
+       аналитиков. etl гарантированно получает 70 %, adhoc не больше половины кластера. -->
+  <property><name>yarn.scheduler.capacity.root.queues</name><value>etl,adhoc</value></property>
+  <property><name>yarn.scheduler.capacity.root.etl.capacity</name><value>70</value></property>
+  <property><name>yarn.scheduler.capacity.root.etl.maximum-capacity</name><value>100</value></property>
+  <property><name>yarn.scheduler.capacity.root.adhoc.capacity</name><value>30</value></property>
+  <property><name>yarn.scheduler.capacity.root.adhoc.maximum-capacity</name><value>50</value></property>
+  <!-- по умолчанию AM может занять 10 % очереди, то есть ~200 МБ: драйвер Spark в режиме cluster не влезет -->
+  <property><name>yarn.scheduler.capacity.maximum-am-resource-percent</name><value>0.5</value></property>
+  <property><name>yarn.scheduler.capacity.root.etl.user-limit-factor</name><value>2</value></property>
+  <property><name>yarn.scheduler.capacity.root.adhoc.user-limit-factor</name><value>2</value></property>
+  <property><name>yarn.scheduler.capacity.resource-calculator</name><value>org.apache.hadoop.yarn.util.resource.DominantResourceCalculator</value></property>
+</configuration>

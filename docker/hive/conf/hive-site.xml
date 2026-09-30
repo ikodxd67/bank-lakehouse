@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<configuration>
+  <!-- Metastore хранит схему в PostgreSQL; derby из образа по умолчанию не переживает перезапуск -->
+  <property><name>javax.jdo.option.ConnectionURL</name><value>jdbc:postgresql://metastore-db:5432/metastore</value></property>
+  <property><name>javax.jdo.option.ConnectionDriverName</name><value>org.postgresql.Driver</value></property>
+  <property><name>javax.jdo.option.ConnectionUserName</name><value>hive</value></property>
+  <property><name>javax.jdo.option.ConnectionPassword</name><value>hive</value></property>
+  <property><name>hive.metastore.uris</name><value>thrift://metastore:9083</value></property>
+  <property><name>hive.metastore.warehouse.dir</name><value>hdfs://namenode:8020/warehouse</value></property>
+  <!-- Spark создаёт таблицы своим клиентом Hive 2.3; строгая проверка версии схемы ему не нужна -->
+  <property><name>hive.metastore.schema.verification</name><value>false</value></property>
+  <!-- HiveServer2: MapReduce в локальном режиме внутри процесса HS2, без YARN -->
+  <property><name>hive.server2.enable.doAs</name><value>false</value></property>
+  <property><name>hive.execution.engine</name><value>mr</value></property>
+  <property><name>mapreduce.framework.name</name><value>local</value></property>
+  <property><name>hive.exec.scratchdir</name><value>/tmp/hive</value></property>
+  <property><name>hive.exec.local.scratchdir</name><value>/tmp/hive-local</value></property>
+  <property><name>hive.exec.dynamic.partition.mode</name><value>nonstrict</value></property>
+</configuration>
