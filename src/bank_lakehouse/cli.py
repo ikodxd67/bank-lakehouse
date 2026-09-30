@@ -30,6 +30,8 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("cdc-register", help="зарегистрировать коннектор Debezium")
     sub.add_parser("cdc-status", help="состояние коннектора Debezium")
 
+    sub.add_parser("gp-load", help="загрузить новые выгрузки из HDFS в Greenplum")
+
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     settings = Settings.from_env()
@@ -60,6 +62,11 @@ def main(argv: list[str] | None = None) -> None:
 
         fn = cdc.register if args.cmd == "cdc-register" else cdc.status
         print(json.dumps(fn(settings.connect_url), ensure_ascii=False, indent=2))
+
+    elif args.cmd == "gp-load":
+        from bank_lakehouse import gp_load
+
+        print(gp_load.run(settings.gp_dsn, settings.webhdfs_url))
 
 
 if __name__ == "__main__":

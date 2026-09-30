@@ -25,6 +25,7 @@ class Settings:
     source_dsn: str
     gp_dsn: str
     connect_url: str
+    webhdfs_url: str
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -33,4 +34,5 @@ class Settings:
             source_dsn=os.environ.get("BANK_SOURCE_DSN", "postgresql://bank:bank@localhost:5433/core"),
             gp_dsn=os.environ.get("BANK_GP_DSN", "postgresql://gpadmin:gpadmin@localhost:5434/dwh"),
             connect_url=os.environ.get("BANK_CONNECT_URL", "http://localhost:8083"),
+            webhdfs_url=os.environ.get("BANK_WEBHDFS_URL", "http://localhost:9870"),
         )

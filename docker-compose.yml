@@ -206,7 +206,31 @@ services:
       metastore: {condition: service_healthy}
     restart: unless-stopped
 
+  greenplum:
+    # Greengage — открытый форк Greenplum 7 от Arenadata (исходники Greenplum закрыты в 2024)
+    image: woblerr/greengage:7.5.0
+    profiles: [gp]
+    # имя хоста записывается в конфигурацию кластера при инициализации;
+    # случайное имя контейнера после пересоздания сломало бы запуск сегментов
+    hostname: greenplum
+    environment:
+      GREENPLUM_PASSWORD: gpadmin
+      GREENPLUM_DATABASE_NAME: dwh
+      GREENPLUM_PXF_ENABLE: "true"
+      TZ: Asia/Almaty
+    ports: ["5434:5432"]
+    volumes:
+      - gp-data:/data
+      - ./docker/greenplum/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "su - gpadmin -c \"psql -d dwh -tAc 'select 1'\""]
+      interval: 10s
+      timeout: 10s
+      retries: 60
+    restart: unless-stopped
+
 volumes:
+  gp-data:
   source-data:
   kafka-data:
   hdfs-name:
