@@ -1,0 +1,5 @@
+.venv
+.git
+**/__pycache__
+dbt/target
+spark/scala/target

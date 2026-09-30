@@ -75,6 +75,18 @@ services:
       retries: 12
     restart: unless-stopped
 
+  # живой процессинг: новые авторизации, подтверждения, снятие холдов, правки клиентов
+  simulator:
+    image: bank-lakehouse/simulator:local
+    build: {context: ., dockerfile: docker/simulator/Dockerfile}
+    profiles: [cdc]
+    command: ["bank", "simulate", "--tick", "10", "--tps", "20"]
+    environment:
+      BANK_SOURCE_DSN: postgresql://bank:bank@source-db:5432/core
+    depends_on:
+      source-db: {condition: service_healthy}
+    restart: unless-stopped
+
   connect:
     image: bank-lakehouse/connect:local
     build: docker/connect
