@@ -19,7 +19,7 @@ core (PostgreSQL) ──Debezium──> Kafka ──Spark──> raw (Hive, Parq
 Оркестрация — Airflow 3: Spark уходит на YARN в режиме `cluster`.
 
 Подробнее: [дизайн](docs/design.md) · [решения и компромиссы](docs/decisions.md) ·
-[замеры](docs/performance.md) · [runbook](docs/runbook.md)
+[замеры](docs/performance.md) · [runbook](docs/runbook.md) · [скриншоты стенда](docs/screenshots.md)
 
 ## Что внутри
 
