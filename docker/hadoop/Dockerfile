@@ -13,8 +13,12 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends python3-setuptools zip \
  && rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL "https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz" \
-      | tar -xz -C /opt \
+# Сначала CDN Apache (быстрый, но только актуальные версии), потом архив (все
+# версии, но бывает очень медленным: в CI однажды отдавал 0,1 МБ/с).
+RUN SPARK_TGZ="spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz" \
+ && (curl -fsSL -o /tmp/spark.tgz "https://dlcdn.apache.org/spark/${SPARK_TGZ}" \
+     || curl -fsSL -o /tmp/spark.tgz "https://archive.apache.org/dist/spark/${SPARK_TGZ}") \
+ && tar -xzf /tmp/spark.tgz -C /opt && rm /tmp/spark.tgz \
  && mv "/opt/spark-${SPARK_VERSION}-bin-hadoop3" /opt/spark \
  && cd /opt/spark/jars \
  && curl -fsSLO "${MAVEN}/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/${ICEBERG_VERSION}/iceberg-spark-runtime-3.5_2.12-${ICEBERG_VERSION}.jar" \

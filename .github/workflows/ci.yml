@@ -49,6 +49,8 @@ jobs:
     # Spark-тесты и тесты DAG-ов идут в тех же образах, что и на стенде:
     # версии Spark, Iceberg и Airflow не расходятся с тем, что реально работает
     runs-on: ubuntu-latest
+    # обычно 3 минуты; без таймаута зависшая загрузка держала бы машину до 6 часов
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Build cluster image
