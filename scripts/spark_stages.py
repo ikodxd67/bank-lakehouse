@@ -56,12 +56,13 @@ def main() -> None:
     info = httpx.get(f"{HISTORY}/applications/{app}", timeout=30).json()
     att = info["attempts"][0]
     print(f"{info['name']}: {att['duration'] / 1000:.1f} с")
-    print(f"{'stage':>5} {'tasks':>5} {'стадия, с':>9} {'shuffle МБ':>10} {'медиана':>8} {'p95':>6} {'max':>6} {'max/мед':>7}  имя")
+    header = ("stage", "tasks", "стадия, с", "shuffle МБ", "медиана", "p95", "max", "max/мед")
+    widths = (5, 5, 9, 10, 8, 6, 6, 7)
+    print(" ".join(f"{h:>{w}}" for h, w in zip(header, widths, strict=True)) + "  имя")
     for r in stages(app):
-        print(
-            f"{r['stage']:>5} {r['tasks']:>5} {r['wall_s']:>9} {r['shuffle_read_mb']:>10} {r['median_s']:>8} {r['p95_s']:>6}"
-            f" {r['max_s']:>6} {r['skew']!s:>7}  {r['name']}"
-        )
+        keys = ("stage", "tasks", "wall_s", "shuffle_read_mb", "median_s", "p95_s", "max_s", "skew")
+        values = [r[k] for k in keys]
+        print(" ".join(f"{v!s:>{w}}" for v, w in zip(values, widths, strict=True)) + f"  {r['name']}")
 
 
 if __name__ == "__main__":

@@ -21,6 +21,12 @@ x-airflow: &airflow
     AIRFLOW__API_AUTH__JWT_SECRET: local-only-not-a-secret
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
     AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "true"
+    # Все сервисы делят один диск ноутбука. Пока Greenplum строит витрины, API-сервер
+    # Airflow может минуты не отвечать, и по умолчанию (3 heartbeat по 5 с) задача
+    # убивается посреди работы. Допуск поднят до ~10 минут простоя API.
+    AIRFLOW__WORKERS__MAX_FAILED_HEARTBEATS: "10"
+    AIRFLOW__WORKERS__EXECUTION_API_TIMEOUT: "30"
+    AIRFLOW__SCHEDULER__TASK_INSTANCE_HEARTBEAT_TIMEOUT: "900"
     # spark-submit уходит в YARN, драйвер работает в кластере (deploy-mode cluster)
     AIRFLOW_CONN_SPARK_YARN: '{"conn_type": "spark", "host": "yarn", "extra": {"queue": "etl", "deploy-mode": "cluster", "yarn_resourcemanager_webapp_address": "http://resourcemanager:8088"}}'
     PYTHONPATH: /opt/bank/src

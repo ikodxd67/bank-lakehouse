@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: mart_daily_turnover
+    description: >
+      Оборот по дням, MCC и сегменту клиента на момент операции. Инкремент:
+      пересчитываются дни, в которые пришли новые строки факта.
+    columns:
+      - name: segment
+        # 'unknown' значит, что операция не нашла версию клиента в SCD2 — так
+        # было, пока первая версия начиналась с момента первой загрузки
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['mass', 'affluent', 'private']}
+  - name: mart_client_monthly
+    columns:
+      - name: client_id
+        data_tests: [not_null]
+  - name: mart_merchant_monthly
+    columns:
+      - name: merchant_id
+        data_tests: [not_null]

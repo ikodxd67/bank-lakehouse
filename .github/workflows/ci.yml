@@ -22,8 +22,8 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Lint
         run: |
-          ruff check src spark tests dags
-          ruff format --check src spark tests dags
+          ruff check src spark tests dags scripts
+          ruff format --check src spark tests dags scripts
       - name: Unit tests
         run: pytest -m "not integration" -q --ignore=tests/spark
       - name: Compose file is valid

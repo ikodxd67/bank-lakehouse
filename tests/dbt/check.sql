@@ -16,5 +16,8 @@ begin
     if n <> 0 then raise exception 'операции без версии клиента: %', n; end if;
     select count(*) into n from marts.mart_daily_turnover where txn_date = '2026-09-01' and segment = 'mass';
     if n <> 1 then raise exception 'сегмент на дату операции определён неверно'; end if;
+    -- витрина инкрементальная: день 4 сентября пришёл второй выгрузкой и должен в ней быть
+    select count(*) into n from marts.mart_daily_turnover where txn_date = '2026-09-04' and turnover_kzt = 300;
+    if n <> 1 then raise exception 'инкремент витрины не подхватил новый день'; end if;
 end $$;
 select pg_get_table_distributedby('dds.fact_card_txn'::regclass);
