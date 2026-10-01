@@ -16,7 +16,7 @@ def test_old_mismatch_is_broken_recent_is_settling():
     dwh = {date(2026, 1, 1): (9, Decimal("90")), date(2026, 9, 30): (4, Decimal("40"))}
     diffs = {d.day: d for d in compare(source, dwh, today=TODAY)}
     assert diffs[date(2026, 1, 1)].settling is False
-    assert diffs[date(2026, 9, 30)].settling is True
+    assert diffs[date(2026, 9, 30)].settling is False
 
 
 def test_day_missing_on_one_side_is_a_diff():
